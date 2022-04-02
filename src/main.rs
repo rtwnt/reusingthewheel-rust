@@ -1,7 +1,7 @@
 use maud::html;
 
-fn main() {
-    let content = html! {
+fn print_example_html_using_maud() {
+    let example_html = html! {
         h1 { "Hello, world!" }
         p.intro {
             "This is an example of the "
@@ -10,5 +10,9 @@ fn main() {
         }
     };
 
-    println!("{}", content.into_string());
+    println!("{}", example_html.into_string());
+}
+
+fn main() {
+    print_example_html_using_maud()
 }
