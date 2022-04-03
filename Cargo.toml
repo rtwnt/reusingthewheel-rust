@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 
 maud = "0.23.0"
+comrak = "0.12.1"

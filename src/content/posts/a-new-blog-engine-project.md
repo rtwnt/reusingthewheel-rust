@@ -54,28 +54,30 @@ The validator class is used by my custom constraint annotation: [`StatusConstrai
 
 I think that&#8217;s enough for this post. In the next one, I will describe the service layer of the project.
 
- [1]: {{< relref "a-php-symfony-blog-engine.md" >}}
- [2]: {{< ref "/projects/url-shortener" >}}
- [3]: https://projects.spring.io/spring-framework/
- [4]: http://projects.spring.io/spring-boot/
- [5]: http://stackoverflow.com/a/35996408
- [6]: https://en.wikipedia.org/wiki/Yule
- [7]: http://hibernate.org/orm/
- [8]: http://www.thymeleaf.org/
- [9]: http://www.thymeleaf.org/doc/tutorials/2.1/thymeleafspring.html#creating-a-form
- [10]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/domain/Article.java
- [11]: http://beanvalidation.org/
- [12]: http://hibernate.org/validator/
- [13]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/domain/Article.java#L66
- [14]: http://docs.oracle.com/javaee/7/api/javax/validation/constraints/NotNull.html
- [15]: https://docs.jboss.org/hibernate/validator/5.4/api/org/hibernate/validator/constraints/NotBlank.html
- [16]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/domain/ArticleStatus.java
- [17]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/ExistingArticleConstraint.java
- [18]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/ExistingArticleConstraint.java#L80
- [19]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/ExistingArticleConstraint.java#L68
- [20]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/ExistingArticleConstraint.java#L58
- [21]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/domain/Article.java#L278
- [22]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/StatusConstraintValidator.java#L52
- [23]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/StatusConstraintValidator.java#L56
- [24]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/StatusConstraintsFulfilled.java#L48
- [25]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/domain/Article.java#L59
+[//]: # ([1]: {{< relref "a-php-symfony-blog-engine.md" >}})
+
+[//]: # ([2]: {{< ref "/projects/url-shortener" >}})
+
+[3]: https://projects.spring.io/spring-framework/
+[4]: http://projects.spring.io/spring-boot/
+[5]: http://stackoverflow.com/a/35996408
+[6]: https://en.wikipedia.org/wiki/Yule
+[7]: http://hibernate.org/orm/
+[8]: http://www.thymeleaf.org/
+[9]: http://www.thymeleaf.org/doc/tutorials/2.1/thymeleafspring.html#creating-a-form
+[10]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/domain/Article.java
+[11]: http://beanvalidation.org/
+[12]: http://hibernate.org/validator/
+[13]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/domain/Article.java#L66
+[14]: http://docs.oracle.com/javaee/7/api/javax/validation/constraints/NotNull.html
+[15]: https://docs.jboss.org/hibernate/validator/5.4/api/org/hibernate/validator/constraints/NotBlank.html
+[16]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/domain/ArticleStatus.java
+[17]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/ExistingArticleConstraint.java
+[18]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/ExistingArticleConstraint.java#L80
+[19]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/ExistingArticleConstraint.java#L68
+[20]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/ExistingArticleConstraint.java#L58
+[21]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/domain/Article.java#L278
+[22]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/StatusConstraintValidator.java#L52
+[23]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/StatusConstraintValidator.java#L56
+[24]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/validation/StatusConstraintsFulfilled.java#L48
+[25]: https://github.com/piotr-rusin/yule/blob/8482b99fedf89311bb9a59f4503be260d67eeac7/src/main/java/com/github/piotr_rusin/yule/domain/Article.java#L59
