@@ -1,7 +1,10 @@
-use std::fs;
+use std::collections::HashSet;
+use std::{fmt, fs};
 use comrak::{Arena, ComrakExtensionOptions, ComrakOptions, ComrakParseOptions, ComrakRenderOptions, format_html, parse_document};
 use comrak::nodes::{AstNode, NodeValue};
 use maud::html;
+use serde::Deserialize;
+use fmt::{Display, Formatter, Result};
 
 fn print_example_html_using_maud() {
     let example_html = html! {
@@ -14,6 +17,44 @@ fn print_example_html_using_maud() {
     };
 
     println!("{}", example_html.into_string());
+}
+
+#[derive(Deserialize)]
+struct PageConfig {
+    title: String,
+    date: String,
+    #[serde(default = "HashSet::new")]
+    categories: HashSet<String>,
+    #[serde(default = "HashSet::new")]
+    projects: HashSet<String>
+}
+
+impl Display for PageConfig {
+    fn fmt(&self, formatter: &mut Formatter) -> Result {
+        write!(formatter, "PageConfig{{\n\ttitle: {}\n\tdate: {}\n\tcategories: {}\n\tprojects: {}\n}}",
+               self.title, self.date, itertools::join(&self.categories, ", "), itertools::join(&self.projects, ", "))
+    }
+}
+
+fn iter_nodes<'a, F>(node: &'a AstNode<'a>, f: &mut F)
+    where F : FnMut(&'a AstNode<'a>) {
+    f(node);
+    for c in node.children() {
+        iter_nodes(c, f);
+    }
+}
+
+fn remove_suffix<'a>(s: &'a str, suffix: &str) -> &'a str {
+    match s.strip_suffix(suffix) {
+        Some(s) => s,
+        None => s
+    }
+}
+
+fn get_parsed_yaml_front_matter(text: &mut Vec<u8>) -> Option<PageConfig> {
+    let yaml_string = &String::from_utf8_lossy(text).to_string();
+    let rest = remove_suffix(yaml_string, "---\n");
+    serde_yaml::from_str(rest).unwrap()
 }
 
 pub fn print_example_html_using_comrak(filename: &str) {
@@ -54,29 +95,21 @@ pub fn print_example_html_using_comrak(filename: &str) {
         &contents,
         &options);
 
-    fn iter_nodes<'a, F>(node: &'a AstNode<'a>, f: &F)
-        where F : Fn(&'a AstNode<'a>) {
-        f(node);
-        for c in node.children() {
-            iter_nodes(c, f);
-        }
-    }
+    let mut article_config: Option<PageConfig> = None;
 
-    iter_nodes(root, &|node| {
+    iter_nodes(root, &mut|node| {
         match &mut node.data.borrow_mut().value {
-            &mut NodeValue::Text(ref mut text) => {
-                let orig = std::mem::replace(text, vec![]);
-                *text = String::from_utf8(orig).unwrap().replace("my", "your").as_bytes().to_vec();
-            },
             &mut NodeValue::FrontMatter(ref mut text) => {
-                println!("Front matter:\n {}", String::from_utf8_lossy(text));
+                article_config = get_parsed_yaml_front_matter(text);
             },
             _ => (),
         }
     });
 
+    println!("Article config:\n{}", article_config.as_ref().unwrap());
+
     let mut html = vec![];
-    format_html(root, &ComrakOptions::default(), &mut html).unwrap();
+    format_html(root, &options, &mut html).unwrap();
 
     println!("{}", String::from_utf8(html).unwrap());
 }
