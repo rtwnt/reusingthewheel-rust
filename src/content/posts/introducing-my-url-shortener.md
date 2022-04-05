@@ -1,6 +1,6 @@
 ---
 title: Introducing my URL shortener
-date: 2016-08-05T13:18:43+00:00
+date: 2016-08-05T13:18
 categories:
   - Development
 projects:

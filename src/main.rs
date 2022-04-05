@@ -3,8 +3,10 @@ use std::{fmt, fs};
 use comrak::{Arena, ComrakExtensionOptions, ComrakOptions, ComrakParseOptions, ComrakRenderOptions, format_html, parse_document};
 use comrak::nodes::{AstNode, NodeValue};
 use maud::html;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use fmt::{Display, Formatter, Result};
+use std::fmt::Error;
+use chrono::{DateTime, MIN_DATETIME, TimeZone, Utc};
 
 fn print_example_html_using_maud() {
     let example_html = html! {
@@ -19,10 +21,33 @@ fn print_example_html_using_maud() {
     println!("{}", example_html.into_string());
 }
 
+const FORMAT: &str = "%Y-%m-%dT%H:%M";
+
+fn deserialize_date_with_format<'de, D>(deserializer: D) -> std::result::Result<DateTime<Utc>, D::Error>
+    where
+        D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Utc.datetime_from_str(&s, FORMAT)
+        .map_err(serde::de::Error::custom)
+}
+
+fn deserialize_option_with_date_with_format<'de, D>(deserializer: D) -> std::result::Result<Option<DateTime<Utc>>, D::Error>
+    where
+        D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    struct Wrapper(#[serde(deserialize_with = "deserialize_date_with_format")] DateTime<Utc>);
+
+    let v = Option::deserialize(deserializer)?;
+    Ok(v.map(|Wrapper(a)| a))
+}
+
 #[derive(Deserialize)]
 struct PageConfig {
     title: String,
-    date: String,
+    #[serde(default, deserialize_with = "deserialize_option_with_date_with_format")]
+    date: Option<DateTime<Utc>>,
     #[serde(default = "HashSet::new")]
     categories: HashSet<String>,
     #[serde(default = "HashSet::new")]
@@ -32,7 +57,7 @@ struct PageConfig {
 impl Display for PageConfig {
     fn fmt(&self, formatter: &mut Formatter) -> Result {
         write!(formatter, "PageConfig{{\n\ttitle: {}\n\tdate: {}\n\tcategories: {}\n\tprojects: {}\n}}",
-               self.title, self.date, itertools::join(&self.categories, ", "), itertools::join(&self.projects, ", "))
+               self.title, self.date.unwrap_or(MIN_DATETIME).to_string(), itertools::join(&self.categories, ", "), itertools::join(&self.projects, ", "))
     }
 }
 

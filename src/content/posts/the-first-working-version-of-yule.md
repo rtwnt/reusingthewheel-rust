@@ -1,6 +1,6 @@
 ---
 title: The first working version of Yule
-date: 2017-09-04T20:00:36+00:00
+date: 2017-09-04T20:00
 categories:
   - Development
 projects:

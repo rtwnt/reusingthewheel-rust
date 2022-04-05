@@ -1,6 +1,6 @@
 ---
 title: Miskito and evolution of ligatures in my conlangs
-date: 2021-04-08T18:00:00+02:00
+date: 2021-04-08T18:00
 categories:
   - Linguistics
   - Conlangs

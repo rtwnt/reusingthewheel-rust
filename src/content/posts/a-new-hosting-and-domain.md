@@ -1,6 +1,6 @@
 ---
 title: A new hosting and domain
-date: 2020-06-07T14:30:10+02:00
+date: 2020-06-07T14:30
 categories:
   - Blog
 use_full_content_as_summary: true

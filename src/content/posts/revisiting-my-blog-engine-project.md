@@ -1,6 +1,6 @@
 ---
 title: "Revisiting my blog engine project"
-date: 2017-12-04T14:38:10+01:00
+date: 2017-12-04T14:38
 categories:
   - Development
 projects:

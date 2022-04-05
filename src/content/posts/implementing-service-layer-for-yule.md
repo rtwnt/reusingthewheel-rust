@@ -1,6 +1,6 @@
 ---
 title: Implementing service layer for Yule
-date: 2017-06-05T09:17:41+00:00
+date: 2017-06-05T09:17
 categories:
   - Development
 projects:
