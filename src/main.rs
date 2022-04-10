@@ -1,11 +1,13 @@
-use std::collections::HashSet;
+use std::collections::{HashSet};
 use std::{fmt, fs};
 use comrak::{Arena, ComrakExtensionOptions, ComrakOptions, ComrakParseOptions, ComrakRenderOptions, format_html, parse_document};
 use comrak::nodes::{AstNode, NodeValue};
 use maud::html;
 use serde::{Deserialize, Deserializer};
 use fmt::{Display, Formatter, Result};
-use std::fmt::Error;
+use std::fs::{create_dir_all, File};
+use std::io::Write;
+use std::path::{PathBuf};
 use chrono::{DateTime, MIN_DATETIME, TimeZone, Utc};
 use walkdir::WalkDir;
 
@@ -63,8 +65,12 @@ impl Display for PageConfig {
 }
 
 struct Page {
-    file_path: String,
+    html_file_path: PathBuf,
     config: PageConfig,
+}
+
+struct HtmlContent {
+    page: Page,
     content: Vec<u8>
 }
 
@@ -126,21 +132,35 @@ fn prepare_options() -> ComrakOptions {
     };
 }
 
-fn get_page_struct(filename: &str) -> Page {
+fn get_html_file_path(markdown_file_path: &str) -> PathBuf {
+    let without_prefix: &str;
+    match markdown_file_path.strip_prefix("content") {
+        Some(s) => without_prefix = s,
+        None => panic!("Missing \"content\" prefix from {}", markdown_file_path)
+    }
+    let file_path_elements = without_prefix.rsplit_once("/").unwrap();
+    let html_file_name: String;
+    match file_path_elements.1.strip_suffix(".md") {
+        Some(s) => html_file_name = s.to_string() + ".html",
+        None => panic!("Missing \".md\" suffix from {}", file_path_elements.1)
+    }
+    let html_file_path = "public".to_string() + file_path_elements.0 + "/" + &html_file_name;
+    return PathBuf::from(&html_file_path);
+}
+
+fn parse_page_data(filename: &str, html_file_path: PathBuf, options: &ComrakOptions) -> HtmlContent {
     println!("{}", filename);
     let contents = fs::read_to_string(filename)
         .expect("Something went wrong reading the file");
-
     // The returned nodes are created in the supplied Arena, and are bound by its lifetime.
     let arena = Arena::new();
-    let options = prepare_options();
     let root = parse_document(
         &arena,
         &contents,
         &options);
-
+    let mut html = vec![];
+    format_html(root, &options, &mut html).unwrap();
     let mut article_config: Option<PageConfig> = None;
-
     iter_nodes(root, &mut|node| {
         match &mut node.data.borrow_mut().value {
             &mut NodeValue::FrontMatter(ref mut text) => {
@@ -149,35 +169,50 @@ fn get_page_struct(filename: &str) -> Page {
             _ => (),
         }
     });
-
-    println!("Article config:\n{}", article_config.as_ref().unwrap());
-
-    let mut html = vec![];
-    format_html(root, &options, &mut html).unwrap();
-
-    println!("Article content\n{}", String::from_utf8(html.clone()).unwrap());
-
-    return Page{
-        file_path: String::from(filename),
+    let page = Page{
+        html_file_path,
         config: article_config.unwrap(),
+    };
+    return HtmlContent {
+        page,
         content: html
+    }
+}
+
+fn save_to_html_file(html: &HtmlContent) {
+    let html_file_path = &html.page.html_file_path;
+    let parent_dir = html_file_path.parent().unwrap();
+    match create_dir_all(parent_dir) {
+        Ok(_t) => {},
+        Err(error) => panic!("Error while creating directory {}: {}", parent_dir.display(), error),
+    };
+    // Open a file in write-only mode, returns `io::Result<File>`
+    let mut file = match File::create(html_file_path) {
+        Err(error) => panic!("Couldn't create {}: {}", html_file_path.display(), error),
+        Ok(file) => file,
+    };
+    match file.write_all(html.content.as_ref()) {
+        Err(error) => panic!("Couldn't write to {}: {}", html_file_path.display(), error),
+        Ok(_) => println!("Successfully wrote to {}", html_file_path.display()),
     }
 }
 
 fn main() {
     print_example_html_using_maud();
 
-    for entry in WalkDir::new("src/content")
+    let options = prepare_options();
+    let mut pages: Vec<Page> = Vec::new();
+    for entry in WalkDir::new("content")
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| !e.file_type().is_dir()) {
-        println!("{}", entry.file_name().to_str().unwrap());
-        println!("{}", entry.path().to_str().unwrap());
-        let page = get_page_struct(entry.path().to_str().unwrap());
-        println!("\n\n{}", page.file_path);
-        // println!("\n");
-        println!("{}", page.config);
-        // println!("\n");
-        println!("{}",  String::from_utf8(page.content).unwrap());
+        let html_path = get_html_file_path(entry.path().to_str().unwrap());
+        let page = parse_page_data(entry.path().to_str().unwrap(), html_path, &options);
+        save_to_html_file(&page);
+        println!("\n\n{}", page.page.html_file_path.display());
+        println!("{}", page.page.config);
+        pages.push(page.page);
     }
+
+    println!("DONE");
 }
