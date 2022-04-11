@@ -1,4 +1,4 @@
-use std::collections::{HashSet};
+use std::collections::{HashMap, HashSet};
 use std::{fmt, fs};
 use comrak::{Arena, ComrakExtensionOptions, ComrakOptions, ComrakParseOptions, ComrakRenderOptions, format_html, parse_document};
 use comrak::nodes::{AstNode, NodeValue};
@@ -8,7 +8,7 @@ use fmt::{Display, Formatter, Result};
 use std::fs::{create_dir_all, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use chrono::{DateTime, MIN_DATETIME, TimeZone, Utc};
+use chrono::{Datelike, DateTime, MIN_DATETIME, TimeZone, Utc};
 use itertools::Itertools;
 use walkdir::WalkDir;
 
@@ -202,6 +202,10 @@ fn main() {
     print_example_html_using_maud();
 
     let options = prepare_options();
+    let mut pages_by_categories: HashMap<String, Vec<&Page>> = HashMap::new();
+    let mut pages_by_projects: HashMap<String, Vec<&Page>> = HashMap::new();
+    let mut pages_by_year: HashMap<String, Vec<&Page>> = HashMap::new();
+
     let pages = WalkDir::new("content")
         .into_iter()
         .filter_map(|e| e.ok())
@@ -212,5 +216,38 @@ fn main() {
             save_to_html_file(&page);
             return page.page;
         }).collect_vec();
+
+    pages.iter()
+        .for_each(
+            |page| {
+                page.config
+                    .categories
+                    .iter()
+                    .for_each(
+                        |category|
+                            pages_by_categories.entry(category.to_string())
+                                .or_insert_with(Vec::new)
+                                .push(&page)
+                    );
+
+                page.config
+                    .projects
+                    .iter()
+                    .for_each(
+                        |project|
+                            pages_by_projects.entry(project.to_string())
+                                .or_insert_with(Vec::new)
+                                .push(&page)
+                    );
+
+                match page.config.date {
+                    Some(datetime) => {
+                        println!("Got year {}", datetime.year());
+                        pages_by_year.entry(datetime.year().to_string()).or_insert_with(Vec::new).push(&page);
+                    },
+                    None => println!("Article {} does not have a date", page.config.title),
+                }
+            }
+        );
     println!("DONE");
 }
