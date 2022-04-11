@@ -7,8 +7,9 @@ use serde::{Deserialize, Deserializer};
 use fmt::{Display, Formatter, Result};
 use std::fs::{create_dir_all, File};
 use std::io::Write;
-use std::path::{PathBuf};
+use std::path::{Path, PathBuf};
 use chrono::{DateTime, MIN_DATETIME, TimeZone, Utc};
+use itertools::Itertools;
 use walkdir::WalkDir;
 
 fn print_example_html_using_maud() {
@@ -132,11 +133,11 @@ fn prepare_options() -> ComrakOptions {
     };
 }
 
-fn get_html_file_path(markdown_file_path: &str) -> PathBuf {
+fn get_html_file_path(markdown_file_path: &Path) -> PathBuf {
     let without_prefix: &str;
-    match markdown_file_path.strip_prefix("content") {
+    match markdown_file_path.to_str().unwrap().strip_prefix("content") {
         Some(s) => without_prefix = s,
-        None => panic!("Missing \"content\" prefix from {}", markdown_file_path)
+        None => panic!("Missing \"content\" prefix from {}", markdown_file_path.display())
     }
     let file_path_elements = without_prefix.rsplit_once("/").unwrap();
     let html_file_name: String;
@@ -148,8 +149,8 @@ fn get_html_file_path(markdown_file_path: &str) -> PathBuf {
     return PathBuf::from(&html_file_path);
 }
 
-fn parse_page_data(filename: &str, html_file_path: PathBuf, options: &ComrakOptions) -> HtmlContent {
-    println!("{}", filename);
+fn parse_page_data(filename: &Path, html_file_path: PathBuf, options: &ComrakOptions) -> HtmlContent {
+    println!("{}", filename.display());
     let contents = fs::read_to_string(filename)
         .expect("Something went wrong reading the file");
     // The returned nodes are created in the supplied Arena, and are bound by its lifetime.
@@ -201,18 +202,15 @@ fn main() {
     print_example_html_using_maud();
 
     let options = prepare_options();
-    let mut pages: Vec<Page> = Vec::new();
-    for entry in WalkDir::new("content")
+    let pages = WalkDir::new("content")
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| !e.file_type().is_dir()) {
-        let html_path = get_html_file_path(entry.path().to_str().unwrap());
-        let page = parse_page_data(entry.path().to_str().unwrap(), html_path, &options);
-        save_to_html_file(&page);
-        println!("\n\n{}", page.page.html_file_path.display());
-        println!("{}", page.page.config);
-        pages.push(page.page);
-    }
-
+        .filter(|e| !e.file_type().is_dir())
+        .map(|entry| {
+            let html_path = get_html_file_path(entry.path());
+            let page = parse_page_data(entry.path(), html_path, &options);
+            save_to_html_file(&page);
+            return page.page;
+        }).collect_vec();
     println!("DONE");
 }
