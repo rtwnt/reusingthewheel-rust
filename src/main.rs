@@ -198,6 +198,12 @@ fn save_to_html_file(html: &HtmlContent) {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum PageType {
+    POST,
+    PAGE
+}
+
 fn main() {
     print_example_html_using_maud();
 
@@ -205,6 +211,7 @@ fn main() {
     let mut pages_by_categories: HashMap<String, Vec<&Page>> = HashMap::new();
     let mut pages_by_projects: HashMap<String, Vec<&Page>> = HashMap::new();
     let mut pages_by_year: HashMap<String, Vec<&Page>> = HashMap::new();
+    let mut pages_by_type: HashMap<PageType, Vec<&Page>> = HashMap::new();
 
     let pages = WalkDir::new("content")
         .into_iter()
@@ -247,6 +254,14 @@ fn main() {
                     },
                     None => println!("Article {} does not have a date", page.config.title),
                 }
+
+                let mut page_type = PageType::PAGE;
+                if page.html_file_path.starts_with("public/posts") {
+                    page_type = PageType::POST;
+                }
+                pages_by_type.entry(page_type)
+                    .or_insert_with(Vec::new)
+                    .push(&page)
             }
         );
     println!("DONE");
