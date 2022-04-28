@@ -50,6 +50,8 @@ fn deserialize_option_with_date_with_format<'de, D>(deserializer: D) -> std::res
 #[derive(Deserialize)]
 struct PageConfig {
     title: String,
+    #[serde(default = "String::new")]
+    path: String,
     #[serde(default, deserialize_with = "deserialize_option_with_date_with_format")]
     date: Option<DateTime<Utc>>,
     #[serde(default = "HashSet::new")]
@@ -170,9 +172,17 @@ fn parse_page_data(filename: &Path, html_file_path: PathBuf, options: &ComrakOpt
             _ => (),
         }
     });
+    let unwrapped_article = article_config.unwrap();
+    let final_config = PageConfig{
+        title: unwrapped_article.title,
+        path: if unwrapped_article.path.is_empty() { html_file_path.to_str().unwrap().to_owned() } else { unwrapped_article.path },
+        date: unwrapped_article.date,
+        categories: unwrapped_article.categories,
+        projects: unwrapped_article.projects
+    };
     let page = Page{
         html_file_path,
-        config: article_config.unwrap(),
+        config: final_config,
     };
     return HtmlContent {
         page,
