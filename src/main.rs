@@ -151,16 +151,43 @@ fn get_html_file_path(markdown_file_path: &Path) -> PathBuf {
     return PathBuf::from(&html_file_path);
 }
 
-fn parse_page_data(filename: &Path, html_file_path: PathBuf, options: &ComrakOptions) -> HtmlContent {
+fn prepare_page_data(filename: &Path, options: &ComrakOptions) -> HtmlContent {
+    let html_file_path = get_html_file_path(filename);
     println!("{}", filename.display());
+    let markdown_content = parse_document_content(filename, options);
+    let config = PageConfig {
+        title: markdown_content.original_config.title,
+        path: prepare_path(markdown_content.original_config.path, &html_file_path),
+        date: markdown_content.original_config.date,
+        categories: markdown_content.original_config.categories,
+        projects: markdown_content.original_config.projects
+    };
+    let page = Page {
+        html_file_path,
+        config,
+    };
+    return HtmlContent {
+        page,
+        content: markdown_content.rendered_html
+    }
+}
+
+fn prepare_path(path: String, html_file_path: &PathBuf) -> String {
+    return if path.is_empty() {
+        html_file_path.to_str().unwrap().to_owned() } else { path }
+}
+
+struct MarkdownContent {
+    original_config: PageConfig,
+    rendered_html: Vec<u8>
+}
+
+fn parse_document_content(filename: &Path, options: &ComrakOptions) -> MarkdownContent {
     let contents = fs::read_to_string(filename)
         .expect("Something went wrong reading the file");
     // The returned nodes are created in the supplied Arena, and are bound by its lifetime.
     let arena = Arena::new();
-    let root = parse_document(
-        &arena,
-        &contents,
-        &options);
+    let root = parse_document(&arena, &contents, &options);
     let mut html = vec![];
     format_html(root, &options, &mut html).unwrap();
     let mut article_config: Option<PageConfig> = None;
@@ -172,21 +199,9 @@ fn parse_page_data(filename: &Path, html_file_path: PathBuf, options: &ComrakOpt
             _ => (),
         }
     });
-    let unwrapped_article = article_config.unwrap();
-    let final_config = PageConfig{
-        title: unwrapped_article.title,
-        path: if unwrapped_article.path.is_empty() { html_file_path.to_str().unwrap().to_owned() } else { unwrapped_article.path },
-        date: unwrapped_article.date,
-        categories: unwrapped_article.categories,
-        projects: unwrapped_article.projects
-    };
-    let page = Page{
-        html_file_path,
-        config: final_config,
-    };
-    return HtmlContent {
-        page,
-        content: html
+    return MarkdownContent {
+        original_config: article_config.unwrap(),
+        rendered_html: html
     }
 }
 
@@ -228,10 +243,9 @@ fn main() {
         .filter_map(|e| e.ok())
         .filter(|e| !e.file_type().is_dir())
         .map(|entry| {
-            let html_path = get_html_file_path(entry.path());
-            let page = parse_page_data(entry.path(), html_path, &options);
-            save_to_html_file(&page);
-            return page.page;
+            let html_content = prepare_page_data(entry.path(), &options);
+            save_to_html_file(&html_content);
+            return html_content.page;
         }).collect_vec();
 
     pages.iter()
