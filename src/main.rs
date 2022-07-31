@@ -7,6 +7,7 @@ use comrak::nodes::{AstNode, NodeValue};
 use maud::html;
 use serde::{Deserialize, Deserializer};
 use fmt::{Display, Formatter, Result};
+use std::cmp::Reverse;
 use std::fs::{create_dir_all, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -265,6 +266,25 @@ enum PageType {
     PAGE
 }
 
+fn to_map_by_date(pages: Vec<&Page>) -> Vec<(String, Vec<&Page>)> {
+    let mut pages_by_year: HashMap<String, Vec<&Page>> = HashMap::new();
+    pages.iter().for_each(|page| {
+        match page.config.date {
+            Some(datetime) => {
+                println!("Got year {}", datetime.year());
+                pages_by_year.entry(datetime.year().to_string()).or_insert_with(Vec::new).push(&page);
+            },
+            None => println!("Article {} does not have a date", page.config.title),
+        }
+    });
+
+    let result: Vec<_> = pages_by_year.into_iter()
+        .sorted_by_key(|item| Reverse(item.0.to_owned()))
+        .collect();
+
+    return result
+}
+
 fn main() {
     print_example_html_using_maud();
 
@@ -337,5 +357,59 @@ fn main() {
                 save_to_path(&page.html_file_path, single_page(&website, &page, contents).into_string())
             }
         );
+    let sorted_pages_by_year = pages_by_year.into_iter()
+        .sorted_by_key(|item| Reverse(item.0.to_owned()))
+        .collect();
+    save_to_path(
+        &PathBuf::from("public/index.html".to_owned()),
+        archive(&website, "Archive", sorted_pages_by_year).into_string()
+    );
+
+    // CATEGORIES
+
+    let all_category_links = pages_by_categories.keys()
+        .sorted_by_key(|category| { category.to_owned() })
+        .map(|category| {
+            Link {
+                url: website.base_url.to_string() + "/categories/" + &category.to_lowercase(),
+                title: category.to_owned()
+            }
+        }).collect_vec();
+    save_to_path(
+        &PathBuf::from("public/categories/index.html".to_owned()),
+        category_list(&website, "Categories", all_category_links).into_string()
+    );
+    pages_by_categories.iter()
+        .for_each(|(category, pages)| {
+            let path = "Categories: ".to_owned() + category;
+            save_to_path(
+                &PathBuf::from("public/categories/".to_owned() + &category.to_lowercase() + "/index.html"),
+                archive(&website, &path, to_map_by_date(pages.to_owned())).into_string()
+            );
+        });
+
+    // PROJECTS
+
+    let all_project_links = pages_by_projects.keys()
+        .sorted_by_key(|category| { category.to_owned() })
+        .map(|category| {
+            Link {
+                url: website.base_url.to_string() + "/projects/" + &category.to_lowercase(),
+                title: category.to_owned()
+            }
+        }).collect_vec();
+    save_to_path(
+        &PathBuf::from("public/projects/index.html".to_owned()),
+        category_list(&website, "Projects", all_project_links).into_string()
+    );
+    pages_by_projects.iter()
+        .for_each(|(category, pages)| {
+            let path = "Projects: ".to_owned() + category;
+            save_to_path(
+                &PathBuf::from("public/projects/".to_owned() + &category.to_lowercase() + "/index.html"),
+                archive(&website, &path, to_map_by_date(pages.to_owned())).into_string()
+            );
+        });
+
     println!("DONE");
 }
