@@ -88,14 +88,14 @@ pub mod reusingthewheel_theme {
         return baseof(website, content);
     }
 
-    pub fn archive(website: &Website, title: &str, articlesToYear: Vec<(String, Vec<&Page>)>) -> Markup {
+    pub fn archive(website: &Website, title: &str, year_to_articles: Vec<(String, Vec<&Page>)>) -> Markup {
         let content = html! {
             h1 {
                 (title)
             }
             div {
                 ul id="articles" {
-                    @for (year, articles) in articlesToYear.into_iter() {
+                    @for (year, articles) in year_to_articles.into_iter() {
                         li {
                             h2 {
                                 (year)
