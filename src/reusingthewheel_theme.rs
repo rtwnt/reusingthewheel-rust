@@ -5,7 +5,7 @@ pub mod reusingthewheel_theme {
     use std::collections::HashMap;
     use chrono::{Date, DateTime, Utc};
     use maud::{html, Markup, DOCTYPE, PreEscaped};
-    use crate::{Link, Page, PageConfig, PageType, Website};
+    use crate::{Link, PageConfig, PageType, Website};
 
     fn header(website: &Website) -> Markup {
         return html! {
@@ -58,14 +58,14 @@ pub mod reusingthewheel_theme {
         }
     }
 
-    pub fn single_page(website: &Website, page: &Page, page_content: String) -> Markup {
+    pub fn single_page(website: &Website, page: &PageConfig, page_content: String) -> Markup {
         let pre_escaped_page_content = PreEscaped(page_content);
         let content = html! {
             article {
                 h1 {
-                    (page.config.title)
+                    (page.title)
                 }
-                @if let Some(date) = page.config.date {
+                @if let Some(date) = page.date {
                     time {
                         (date.format("%Y.%m.%d"))
                     }
@@ -88,7 +88,7 @@ pub mod reusingthewheel_theme {
         return baseof(website, content);
     }
 
-    pub fn archive(website: &Website, title: &str, year_to_articles: Vec<(String, Vec<&Page>)>) -> Markup {
+    pub fn archive(website: &Website, title: &str, year_to_articles: Vec<(String, Vec<&PageConfig>)>) -> Markup {
         let content = html! {
             h1 {
                 (title)
@@ -103,9 +103,9 @@ pub mod reusingthewheel_theme {
                             @for article in articles {
                                 li {
                                     time {
-                                        (article.config.date.unwrap().format("%Y.%m.%d"))
+                                        (article.date.unwrap().format("%Y.%m.%d"))
                                     } (PreEscaped("&nbsp;"))
-                                      a href=(article.config.path) { (article.config.title) }
+                                      a href=(article.path) { (article.title) }
                                 }
                             }
                         }

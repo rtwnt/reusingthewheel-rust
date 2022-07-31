@@ -52,7 +52,7 @@ fn deserialize_option_with_date_with_format<'de, D>(deserializer: D) -> std::res
 }
 
 #[derive(Deserialize)]
-struct PageConfig {
+pub struct PageConfig {
     title: String,
     #[serde(default = "String::new")]
     path: String,
@@ -64,6 +64,12 @@ struct PageConfig {
     projects: HashSet<String>
 }
 
+impl PageConfig {
+    pub fn get_actual_html_file_path(&self) -> String {
+        return "public/".to_string() + &self.path;
+    }
+}
+
 impl Display for PageConfig {
     fn fmt(&self, formatter: &mut Formatter) -> Result {
         write!(formatter, "PageConfig{{\n\ttitle: {}\n\tdate: {}\n\tcategories: {}\n\tprojects: {}\n}}",
@@ -71,13 +77,8 @@ impl Display for PageConfig {
     }
 }
 
-pub struct Page {
-    html_file_path: PathBuf,
-    config: PageConfig,
-}
-
 struct HtmlContent {
-    page: Page,
+    page: PageConfig,
     content: Vec<u8>
 }
 
@@ -96,8 +97,8 @@ pub struct Website {
 }
 
 impl Website {
-    pub fn get_category_links_for_page(&self, page: &Page) -> Vec<Link> {
-        return page.config.categories.iter()
+    pub fn get_category_links_for_page(&self, page: &PageConfig) -> Vec<Link> {
+        return page.categories.iter()
             .map(|tag| {
                 Link {
                     url: self.base_url.to_string() + "/tags/" + tag,
@@ -169,24 +170,24 @@ fn prepare_options() -> ComrakOptions {
     };
 }
 
-fn get_html_file_path(markdown_file_path: &Path) -> PathBuf {
+fn get_article_path_from_file_path(markdown_file_path: &Path) -> PathBuf {
     let without_prefix: &str;
     match markdown_file_path.to_str().unwrap().strip_prefix("content") {
         Some(s) => without_prefix = s,
         None => panic!("Missing \"content\" prefix from {}", markdown_file_path.display())
     }
     let file_path_elements = without_prefix.rsplit_once("/").unwrap();
-    let html_file_name: String;
+    let page_name: String;
     match file_path_elements.1.strip_suffix(".md") {
-        Some(s) => html_file_name = s.to_string() + ".html",
+        Some(s) => page_name = s.to_string(),
         None => panic!("Missing \".md\" suffix from {}", file_path_elements.1)
     }
-    let html_file_path = "public".to_string() + file_path_elements.0 + "/" + &html_file_name;
+    let html_file_path = file_path_elements.0.to_string() + "/" + &page_name + "/";
     return PathBuf::from(&html_file_path);
 }
 
 fn prepare_page_data(filename: &Path, options: &ComrakOptions) -> HtmlContent {
-    let html_file_path = get_html_file_path(filename);
+    let html_file_path = get_article_path_from_file_path(filename);
     println!("{}", filename.display());
     let markdown_content = parse_document_content(filename, options);
     let config = PageConfig {
@@ -196,19 +197,18 @@ fn prepare_page_data(filename: &Path, options: &ComrakOptions) -> HtmlContent {
         categories: markdown_content.original_config.categories,
         projects: markdown_content.original_config.projects
     };
-    let page = Page {
-        html_file_path,
-        config,
-    };
     return HtmlContent {
-        page,
+        page: config,
         content: markdown_content.rendered_html
     }
 }
 
 fn prepare_path(path: String, html_file_path: &PathBuf) -> String {
-    let path_without_prefix = html_file_path.to_str().unwrap().strip_prefix("public/").unwrap();
-    return if path.is_empty() { path_without_prefix.to_owned() } else { path }
+    return if path.is_empty() {
+        html_file_path.to_str().unwrap().to_owned()
+    }  else {
+        path
+    }
 }
 
 struct MarkdownContent {
@@ -240,7 +240,7 @@ fn parse_document_content(filename: &Path, options: &ComrakOptions) -> MarkdownC
 }
 
 fn save_to_html_file(html: &HtmlContent) {
-    save_to_path(&html.page.html_file_path, String::from_utf8(html.content.to_owned()).unwrap());
+    save_to_path(&PathBuf::from(&html.page.get_actual_html_file_path()), String::from_utf8(html.content.to_owned()).unwrap());
 }
 
 fn save_to_path(path: &PathBuf, content: String) {
@@ -266,15 +266,15 @@ enum PageType {
     PAGE
 }
 
-fn to_map_by_date(pages: Vec<&Page>) -> Vec<(String, Vec<&Page>)> {
-    let mut pages_by_year: HashMap<String, Vec<&Page>> = HashMap::new();
+fn to_map_by_date(pages: Vec<&PageConfig>) -> Vec<(String, Vec<&PageConfig>)> {
+    let mut pages_by_year: HashMap<String, Vec<&PageConfig>> = HashMap::new();
     pages.iter().for_each(|page| {
-        match page.config.date {
+        match page.date {
             Some(datetime) => {
                 println!("Got year {}", datetime.year());
                 pages_by_year.entry(datetime.year().to_string()).or_insert_with(Vec::new).push(&page);
             },
-            None => println!("Article {} does not have a date", page.config.title),
+            None => println!("Article {} does not have a date", page.title),
         }
     });
 
@@ -289,10 +289,10 @@ fn main() {
     print_example_html_using_maud();
 
     let options = prepare_options();
-    let mut pages_by_categories: HashMap<String, Vec<&Page>> = HashMap::new();
-    let mut pages_by_projects: HashMap<String, Vec<&Page>> = HashMap::new();
-    let mut pages_by_year: HashMap<String, Vec<&Page>> = HashMap::new();
-    let mut pages_by_type: HashMap<PageType, Vec<&Page>> = HashMap::new();
+    let mut pages_by_categories: HashMap<String, Vec<&PageConfig>> = HashMap::new();
+    let mut pages_by_projects: HashMap<String, Vec<&PageConfig>> = HashMap::new();
+    let mut pages_by_year: HashMap<String, Vec<&PageConfig>> = HashMap::new();
+    let mut pages_by_type: HashMap<PageType, Vec<&PageConfig>> = HashMap::new();
 
     let pages = WalkDir::new("content")
         .into_iter()
@@ -316,8 +316,7 @@ fn main() {
     pages.iter()
         .for_each(
             |page| {
-                page.config
-                    .categories
+                page.categories
                     .iter()
                     .for_each(
                         |category|
@@ -326,8 +325,7 @@ fn main() {
                                 .push(&page)
                     );
 
-                page.config
-                    .projects
+                page.projects
                     .iter()
                     .for_each(
                         |project|
@@ -336,25 +334,25 @@ fn main() {
                                 .push(&page)
                     );
 
-                match page.config.date {
+                match page.date {
                     Some(datetime) => {
                         println!("Got year {}", datetime.year());
                         pages_by_year.entry(datetime.year().to_string()).or_insert_with(Vec::new).push(&page);
                     },
-                    None => println!("Article {} does not have a date", page.config.title),
+                    None => println!("Article {} does not have a date", page.title),
                 }
 
                 let mut page_type = PageType::PAGE;
-                if page.html_file_path.starts_with("public/posts") {
+                if page.path.starts_with("public/posts") {
                     page_type = PageType::POST;
                 }
                 pages_by_type.entry(page_type)
                     .or_insert_with(Vec::new)
                     .push(&page);
 
-                let contents = fs::read_to_string(page.html_file_path.to_owned())
+                let contents = fs::read_to_string(page.get_actual_html_file_path().to_owned())
                     .expect("Something went wrong reading the file");
-                save_to_path(&page.html_file_path, single_page(&website, &page, contents).into_string())
+                save_to_path(&PathBuf::from(&page.get_actual_html_file_path()), single_page(&website, &page, contents).into_string())
             }
         );
     let sorted_pages_by_year = pages_by_year.into_iter()
