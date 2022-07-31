@@ -238,20 +238,23 @@ fn parse_document_content(filename: &Path, options: &ComrakOptions) -> MarkdownC
 }
 
 fn save_to_html_file(html: &HtmlContent) {
-    let html_file_path = &html.page.html_file_path;
-    let parent_dir = html_file_path.parent().unwrap();
+    save_to_path(&html.page.html_file_path, String::from_utf8(html.content.to_owned()).unwrap());
+}
+
+fn save_to_path(path: &PathBuf, content: String) {
+    let parent_dir = path.parent().unwrap();
     match create_dir_all(parent_dir) {
         Ok(_t) => {},
         Err(error) => panic!("Error while creating directory {}: {}", parent_dir.display(), error),
     };
     // Open a file in write-only mode, returns `io::Result<File>`
-    let mut file = match File::create(html_file_path) {
-        Err(error) => panic!("Couldn't create {}: {}", html_file_path.display(), error),
+    let mut file = match File::create(path) {
+        Err(error) => panic!("Couldn't create {}: {}", path.display(), error),
         Ok(file) => file,
     };
-    match file.write_all(html.content.as_ref()) {
-        Err(error) => panic!("Couldn't write to {}: {}", html_file_path.display(), error),
-        Ok(_) => println!("Successfully wrote to {}", html_file_path.display()),
+    match file.write_all(content.as_ref()) {
+        Err(error) => panic!("Couldn't write to {}: {}", path.display(), error),
+        Ok(_) => println!("Successfully wrote to {}", path.display()),
     }
 }
 
