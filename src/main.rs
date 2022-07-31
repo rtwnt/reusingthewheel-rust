@@ -283,6 +283,15 @@ fn main() {
             return html_content.page;
         }).collect_vec();
 
+    let website = Website {
+        base_url: "https://reusingthewheel.net".to_string(),
+        title: "Reusing the wheel".to_string(),
+        menu_items: Vec::new(),
+        description: "A blog about my programming hobby".to_string(),
+        author: "Piotr Rusin".to_string(),
+        year: "2022".to_string(),
+    };
+
     pages.iter()
         .for_each(
             |page| {
@@ -320,7 +329,11 @@ fn main() {
                 }
                 pages_by_type.entry(page_type)
                     .or_insert_with(Vec::new)
-                    .push(&page)
+                    .push(&page);
+
+                let contents = fs::read_to_string(page.html_file_path.to_owned())
+                    .expect("Something went wrong reading the file");
+                save_to_path(&page.html_file_path, single_page(&website, &page, contents).into_string())
             }
         );
     println!("DONE");
