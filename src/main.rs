@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 use chrono::{Datelike, DateTime, MIN_DATETIME, TimeZone, Utc};
 use itertools::Itertools;
 use walkdir::WalkDir;
+use crate::reusingthewheel_theme::reusingthewheel_theme::{archive, category_list, single_page};
 
 fn print_example_html_using_maud() {
     let example_html = html! {
