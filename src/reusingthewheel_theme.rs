@@ -117,7 +117,7 @@ pub mod reusingthewheel_theme {
         return baseof(website, content)
     }
 
-    fn taxonomy_item_list(website: &Website, title: &str, links: Vec<Link>) -> Markup {
+    fn taxonomy_item_list(title: &str, links: Vec<Link>) -> Markup {
         return html! {
             article {
                 h1 {
@@ -137,12 +137,12 @@ pub mod reusingthewheel_theme {
     }
 
     pub fn category_list(website: &Website, title: &str, links: Vec<Link>) -> Markup {
-        let content = taxonomy_item_list(website, title, links);
+        let content = taxonomy_item_list(title, links);
         return baseof(website, content);
     }
 
     pub fn project_list(website: &Website, title: &str, links: Vec<Link>) -> Markup {
-        let content = taxonomy_item_list(website, title, links);
+        let content = taxonomy_item_list(title, links);
         return baseof(website, content);
     }
 }
