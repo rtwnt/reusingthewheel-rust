@@ -207,8 +207,8 @@ fn prepare_page_data(filename: &Path, options: &ComrakOptions) -> HtmlContent {
 }
 
 fn prepare_path(path: String, html_file_path: &PathBuf) -> String {
-    return if path.is_empty() {
-        html_file_path.to_str().unwrap().to_owned() } else { path }
+    let path_without_prefix = html_file_path.to_str().unwrap().strip_prefix("public/").unwrap();
+    return if path.is_empty() { path_without_prefix.to_owned() } else { path }
 }
 
 struct MarkdownContent {
