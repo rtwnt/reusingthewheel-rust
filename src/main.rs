@@ -1,3 +1,5 @@
+mod reusingthewheel_theme;
+
 use std::collections::{HashMap, HashSet};
 use std::{fmt, fs};
 use comrak::{Arena, ComrakExtensionOptions, ComrakOptions, ComrakParseOptions, ComrakRenderOptions, format_html, parse_document};
@@ -67,7 +69,7 @@ impl Display for PageConfig {
     }
 }
 
-struct Page {
+pub struct Page {
     html_file_path: PathBuf,
     config: PageConfig,
 }
@@ -75,6 +77,36 @@ struct Page {
 struct HtmlContent {
     page: Page,
     content: Vec<u8>
+}
+
+pub struct Link {
+    url: String,
+    title: String,
+}
+
+pub struct Website {
+    base_url: String,
+    title: String,
+    menu_items: Vec<Link>,
+    description: String,
+    author: String,
+    year: String,
+}
+
+impl Website {
+    pub fn get_category_links_for_page(&self, page: &Page) -> Vec<Link> {
+        return page.config.categories.iter()
+            .map(|tag| {
+                Link {
+                    url: self.base_url.to_string() + "/tags/" + tag,
+                    title: tag.to_owned()
+                }
+            }).collect_vec()
+    }
+
+    pub fn get_all_category_links(&self) -> Vec<Link> {
+        return vec![]
+    }
 }
 
 fn iter_nodes<'a, F>(node: &'a AstNode<'a>, f: &mut F)
