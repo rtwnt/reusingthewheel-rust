@@ -66,7 +66,7 @@ pub struct PageConfig {
 
 impl PageConfig {
     pub fn get_actual_html_file_path(&self) -> String {
-        return "public/".to_string() + &self.path;
+        return "public/".to_string() + &self.path + "index.html";
     }
 }
 
