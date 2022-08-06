@@ -16,6 +16,11 @@ use itertools::Itertools;
 use walkdir::WalkDir;
 use crate::reusingthewheel_theme::reusingthewheel_theme::{archive, category_list, single_page};
 
+#[macro_use] extern crate log;
+extern crate simplelog;
+
+use simplelog::*;
+
 fn print_example_html_using_maud() {
     let example_html = html! {
         h1 { "Hello, world!" }
@@ -26,7 +31,7 @@ fn print_example_html_using_maud() {
         }
     };
 
-    println!("{}", example_html.into_string());
+    info!("{}", example_html.into_string());
 }
 
 const FORMAT: &str = "%Y-%m-%dT%H:%M";
@@ -188,7 +193,7 @@ fn get_article_path_from_file_path(markdown_file_path: &Path) -> PathBuf {
 
 fn prepare_page_data(filename: &Path, options: &ComrakOptions) -> HtmlContent {
     let html_file_path = get_article_path_from_file_path(filename);
-    println!("{}", filename.display());
+    info!("{}", filename.display());
     let markdown_content = parse_document_content(filename, options);
     let config = PageConfig {
         title: markdown_content.original_config.title,
@@ -256,7 +261,7 @@ fn save_to_path(path: &PathBuf, content: String) {
     };
     match file.write_all(content.as_ref()) {
         Err(error) => panic!("Couldn't write to {}: {}", path.display(), error),
-        Ok(_) => println!("Successfully wrote to {}", path.display()),
+        Ok(_) => info!("Successfully wrote to {}", path.display()),
     }
 }
 
@@ -271,10 +276,10 @@ fn to_map_by_date(pages: Vec<&PageConfig>) -> Vec<(String, Vec<&PageConfig>)> {
     pages.iter().for_each(|page| {
         match page.date {
             Some(datetime) => {
-                println!("Got year {}", datetime.year());
+                info!("Got year {}", datetime.year());
                 pages_by_year.entry(datetime.year().to_string()).or_insert_with(Vec::new).push(&page);
             },
-            None => println!("Article {} does not have a date", page.title),
+            None => info!("Article {} does not have a date", page.title),
         }
     });
 
@@ -286,6 +291,14 @@ fn to_map_by_date(pages: Vec<&PageConfig>) -> Vec<(String, Vec<&PageConfig>)> {
 }
 
 fn main() {
+    CombinedLogger::init(
+        vec![
+            TermLogger::new(LevelFilter::Warn, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
+            WriteLogger::new(LevelFilter::Info, Config::default(), File::create("reusing_the_wheel_rust.log").unwrap()),
+        ]
+    ).unwrap();
+
+
     print_example_html_using_maud();
 
     let options = prepare_options();
@@ -336,10 +349,10 @@ fn main() {
 
                 match page.date {
                     Some(datetime) => {
-                        println!("Got year {}", datetime.year());
+                        info!("Got year {}", datetime.year());
                         pages_by_year.entry(datetime.year().to_string()).or_insert_with(Vec::new).push(&page);
                     },
-                    None => println!("Article {} does not have a date", page.title),
+                    None => info!("Article {} does not have a date", page.title),
                 }
 
                 let mut page_type = PageType::PAGE;
@@ -409,5 +422,5 @@ fn main() {
             );
         });
 
-    println!("DONE");
+    info!("DONE");
 }
