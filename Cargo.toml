@@ -15,3 +15,4 @@ serde_yaml = "0.8.23"
 chrono = { version = "0.4.19", features = ["serde"] }
 walkdir = "2.3.2"
 log = "0.4.17"
+simplelog = "0.12.0"
